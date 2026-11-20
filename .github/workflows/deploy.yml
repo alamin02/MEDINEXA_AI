@@ -1,0 +1,19 @@
+name: Deploy Medinexa AI
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment target'
+        required: true
+        default: 'staging'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy notice
+        run: |
+          echo "Deploying Medinexa AI to ${{ github.event.inputs.environment }} environment"
+          echo "Configure SECRETS in GitHub Repository Settings (e.g., DEPLOY_SSH_KEY, DOCKER_REGISTRY)"
