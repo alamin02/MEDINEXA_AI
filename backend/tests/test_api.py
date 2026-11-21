@@ -5,6 +5,7 @@ Integration and Unit Tests for Medinexa AI FastAPI Backend
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.core.config import Settings
 from app.core.security import hash_password, verify_password
 
 client = TestClient(app)
@@ -15,11 +16,24 @@ def test_password_hashing():
     assert verify_password(pwd, hashed) is True
     assert verify_password("WrongPassword", hashed) is False
 
+def test_postgres_database_urls_use_async_driver():
+    assert Settings(DATABASE_URL="postgres://user:pass@db.example/app").sqlalchemy_database_url == (
+        "postgresql+asyncpg://user:pass@db.example/app"
+    )
+    assert Settings(DATABASE_URL="postgresql://user:pass@db.example/app").sqlalchemy_database_url == (
+        "postgresql+asyncpg://user:pass@db.example/app"
+    )
+
 def test_health_endpoint():
     response = client.get("/api/v1/health/")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
     assert response.json()["demo_mode"] is True
+
+def test_health_endpoint_reports_configured_demo_mode(monkeypatch):
+    monkeypatch.setattr("app.api.health.settings.DEMO_MODE", False)
+    response = client.get("/api/v1/health/")
+    assert response.json()["demo_mode"] is False
 
 def test_auth_login_demo_user():
     response = client.post("/api/v1/auth/login", json={

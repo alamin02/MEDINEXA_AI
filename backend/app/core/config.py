@@ -9,7 +9,11 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     DEMO_MODE: bool = True
 
-    DATABASE_URL: str = "sqlite+aiosqlite:///./medinexa.db"
+    DATABASE_URL: str = (
+        "sqlite+aiosqlite:////tmp/medinexa.db"
+        if os.getenv("VERCEL")
+        else "sqlite+aiosqlite:///./medinexa.db"
+    )
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -29,6 +33,14 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        if self.DATABASE_URL.startswith("postgresql://"):
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return self.DATABASE_URL
 
     class Config:
         env_file = ".env"
